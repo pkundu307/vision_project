@@ -1,20 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form"; 
 import ThemeToggle from "./ThemeToggle";
 import Image from "next/image";
 import Sidebar from "./Sidebar";
-// import { loginUser } from "../GlobalRedux/Features/userSlice";
-// import { RootState } from "../GlobalRedux/store";
-// import { UseDispatch,useSelector } from "react-redux";
 
 const Navbar = () => {
   const [currentTime, setCurrentTime] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false); // Modal visibility state
-  const [isLogin, setIsLogin] = useState(true); // Toggle between login and register forms
-  const [isOtpSent, setIsOtpSent] = useState(false); // State to manage OTP sent
-  const [otp, setOtp] = useState(""); // Store OTP input
-  const [email, setEmail] = useState(""); // Store email input (to send OTP to)
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLogin, setIsLogin] = useState(true);
+  const [statusMessage, setStatusMessage] = useState("");
+
+  const { register, handleSubmit, reset, formState: { errors } } = useForm();
 
   useEffect(() => {
     const updateTime = () => {
@@ -25,190 +23,176 @@ const Navbar = () => {
       setCurrentTime(`${hours}:${minutes}:${seconds}`);
     };
 
-    updateTime(); // Initial time update
-    const timeInterval = setInterval(updateTime, 1000); // Update every second
+    updateTime();
+    const timeInterval = setInterval(updateTime, 1000);
 
-    return () => clearInterval(timeInterval); // Cleanup on component unmount
+    return () => clearInterval(timeInterval);
   }, []);
 
-  // Handle modal toggle
-  const toggleModal = () => {
-    setIsModalOpen(!isModalOpen);
-  };
+  const toggleModal = () => setIsModalOpen(!isModalOpen);
 
-  // Handle form switching between login and register
-  const toggleForm = () => {
-    setIsLogin(!isLogin);
-  };
+  const toggleForm = () => setIsLogin(!isLogin);
 
-  // Handle OTP sending (simulate the action)
-  const sendOtp = () => {
-    if (!email) {
-      alert("Please enter your email.");
-      return;
+  const handleRegister = async (data) => {
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const responseData = await response.json();
+      if (response.ok) {
+        setStatusMessage("Registration successful! Please check your email.");
+        reset();
+        setIsLogin(true);
+      } else {
+        setStatusMessage(responseData.message || "Registration failed.");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      setStatusMessage("Server error. Please try again later.");
     }
-    // Simulate sending OTP
-    alert(`OTP sent to ${email}`);
-    setIsOtpSent(true);
   };
 
-  // Handle OTP verification
-  const verifyOtp = () => {
-    if (otp === "123456") {
-      alert("OTP verified successfully!");
-      // Proceed to complete the registration process
-      setIsModalOpen(false); // Close modal after successful verification
-    } else {
-      alert("Invalid OTP.");
+  const handleLogin = async (data) => {
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const responseData = await response.json();
+      if (response.ok) {
+        setStatusMessage("Login successful!");
+        reset();
+        toggleModal(); // Close modal after successful login
+      } else {
+        setStatusMessage(responseData.message || "Login failed.");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      setStatusMessage("Server error. Please try again later.");
     }
   };
 
   return (
     <>
-      <nav className="z-50 fixed top-0 w-full">
+      <nav className="z-50 fixed top-0 w-full shadow-lg shadow-slate-800">
         <Sidebar />
-        <div className="bg-gray-800 text-white flex justify-between items-center px-4">
+        <div className="bg-gray-800 text-white flex justify-between items-center px-5 py-2">
           <div className="flex items-center space-x-4">
             <Image
-              src="/logo1.png" // Path to your logo in the public folder
+              src="/logo1.png"
               alt="Logo"
-              width={30}
-              height={30}
+              width={35}
+              height={35}
               className="object-contain rounded-md ml-20"
             />
           </div>
 
-          {/* Center the time */}
           <div className="text-center text-xs font-mono">{currentTime}</div>
 
-          {/* Right-side items */}
           <div className="flex items-center space-x-4">
             <ThemeToggle />
             <button
-              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-1 px-3 rounded-md"
-              onClick={toggleModal} // Open the modal
+              className="bg-slate-600 hover:bg-purple-400 text-white font-semibold py-1 px-3 rounded-md"
+              onClick={toggleModal}
             >
-              Login
+              {isLogin ? "Login" : "Register"}
             </button>
           </div>
         </div>
       </nav>
 
-      {/* Modal Popup */}
       {isModalOpen && (
-        <div className="fixed inset-0 flex justify-center items-center bg-gray-500 bg-opacity-50">
-          <div className="bg-white p-8 rounded-lg shadow-lg w-96">
+        <div className="fixed inset-0 z-50 flex justify-center items-center bg-gray-500 bg-opacity-50">
+          <div className="bg-white p-8 rounded-lg shadow-lg w-96 z-60">
             <div className="flex justify-between mb-4">
               <h2 className="text-xl font-semibold">{isLogin ? "Login" : "Register"}</h2>
               <button
-                className="text-red-500"
-                onClick={toggleModal} // Close the modal
+                className="text-red-500 shadow-xl shadow-violet-400 rounded-3xl p-2"
+                onClick={toggleModal}
               >
-                &times;
+                ✖️
               </button>
             </div>
 
-            {/* Toggle between Register and Login Forms */}
             {isLogin ? (
-              <form>
+              <form onSubmit={handleSubmit(handleLogin)}>
                 <div className="mb-4">
                   <label htmlFor="email" className="block text-sm font-semibold">Email</label>
                   <input
                     type="email"
-                    id="email"
+                    {...register("email", { required: "Email is required" })}
                     className="w-full p-2 border border-gray-300 rounded-md"
                     placeholder="Enter your email"
-                    required
                   />
+                  {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
                 </div>
                 <div className="mb-4">
                   <label htmlFor="password" className="block text-sm font-semibold">Password</label>
                   <input
                     type="password"
-                    id="password"
+                    {...register("password", { required: "Password is required" })}
                     className="w-full p-2 border border-gray-300 rounded-md"
                     placeholder="Enter your password"
-                    required
                   />
+                  {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
                 </div>
-                <button type="submit" className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-md">
+                <button type="submit" className="w-full bg-black hover:bg-purple-300 text-white py-2 rounded-md shadow-purple-400 shadow-2xl">
                   Login
                 </button>
               </form>
             ) : (
-              <>
-                {!isOtpSent ? (
-                  <form>
-                    <div className="mb-4">
-                      <label htmlFor="name" className="block text-sm font-semibold">Name</label>
-                      <input
-                        type="text"
-                        id="name"
-                        className="w-full p-2 border border-gray-300 rounded-md"
-                        placeholder="Enter your name"
-                        required
-                      />
-                    </div>
-                    <div className="mb-4">
-                      <label htmlFor="email" className="block text-sm font-semibold">Email</label>
-                      <input
-                        type="email"
-                        id="email"
-                        className="w-full p-2 border border-gray-300 rounded-md"
-                        placeholder="Enter your email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="mb-4">
-                      <label htmlFor="password" className="block text-sm font-semibold">Password</label>
-                      <input
-                        type="password"
-                        id="password"
-                        className="w-full p-2 border border-gray-300 rounded-md"
-                        placeholder="Enter your password"
-                        required
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-md"
-                      onClick={sendOtp} // Send OTP
-                    >
-                      Register
-                    </button>
-                  </form>
-                ) : (
-                  <div>
-                    <div className="mb-4">
-                      <label htmlFor="otp" className="block text-sm font-semibold">Enter OTP</label>
-                      <input
-                        type="text"
-                        id="otp"
-                        className="w-full p-2 border border-gray-300 rounded-md"
-                        placeholder="Enter OTP"
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      className="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-md"
-                      onClick={verifyOtp} // Verify OTP
-                    >
-                      Verify
-                    </button>
-                  </div>
-                )}
-              </>
+              <form onSubmit={handleSubmit(handleRegister)}>
+                <div className="mb-4">
+                  <label htmlFor="name" className="block text-sm font-semibold">Name</label>
+                  <input
+                    type="text"
+                    {...register("name", { required: "Name is required" })}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                    placeholder="Enter your name"
+                  />
+                  {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
+                </div>
+                <div className="mb-4">
+                  <label htmlFor="email" className="block text-sm font-semibold">Email</label>
+                  <input
+                    type="email"
+                    {...register("email", { required: "Email is required" })}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                    placeholder="Enter your email"
+                  />
+                  {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
+                </div>
+                <div className="mb-4">
+                  <label htmlFor="password" className="block text-sm font-semibold">Password</label>
+                  <input
+                    type="password"
+                    {...register("password", { required: "Password is required" })}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                    placeholder="Enter your password"
+                  />
+                  {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
+                </div>
+                <button type="submit" className="w-full bg-black hover:bg-purple-300 text-white py-2 rounded-md">
+                  Register
+                </button>
+              </form>
+            )}
+
+            {statusMessage && (
+              <div className="mt-4 text-center text-red-500">
+                {statusMessage}
+              </div>
             )}
 
             <div className="mt-4 text-center">
               <button
                 className="text-blue-500"
-                onClick={toggleForm} // Switch between login and register
+                onClick={toggleForm}
               >
                 {isLogin ? "Don't have an account? Register" : "Already have an account? Login"}
               </button>

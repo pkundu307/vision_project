@@ -18,7 +18,7 @@ const AllCourses = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 p-8 flex flex-col items-center">
-   
+   <br /><br /><br /><br />
       <div className="w-full max-w-3xl mb-6">
         <div className="bg-gray-800 text-white rounded-lg shadow-lg transform transition duration-300 hover:scale-105 shadow-gray-500 hover:shadow-purple-400 p-8 flex items-center justify-center text-2xl font-bold">
           <span className="text-4xl mr-4">+</span>
