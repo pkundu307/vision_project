@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import ThemeToggle from "./ThemeToggle";
 import Image from "next/image";
 import Sidebar from "./Sidebar";
+// import { loginUser } from "../GlobalRedux/Features/userSlice";
+// import { RootState } from "../GlobalRedux/store";
+// import { UseDispatch,useSelector } from "react-redux";
 
 const Navbar = () => {
   const [currentTime, setCurrentTime] = useState("");
