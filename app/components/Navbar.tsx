@@ -6,8 +6,8 @@ import ThemeToggle from "./ThemeToggle";
 import Image from "next/image";
 import Sidebar from "./Sidebar";
 import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "../GlobalRedux/store";
-import { loginUser, logoutUser } from "../GlobalRedux/Features/userSlice";
+import { AppDispatch } from "../GlobalRedux/store";
+import { fetchUserDetails, loginUser, logoutUser, selectIsAuthenticated, selectUser } from "../GlobalRedux/Features/userSlice";
 
 interface LoginFormInputs {
   email: string;
@@ -22,18 +22,29 @@ const Navbar = () => {
   const [currentTime, setCurrentTime] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
+  const [statusMessage, setStatusMessage] = useState("");
   
   const dispatch: AppDispatch = useDispatch();
-  const { name, isAuthenticated, error } = useSelector((state: RootState) => state.user);
+
+
+  const user = useSelector(selectUser);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+
+  useEffect(() => {
+    dispatch(fetchUserDetails());
+  }, [dispatch]);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<LoginFormInputs | RegisterFormInputs>();
 
   useEffect(() => {
     const updateTime = () => {
-      const now = new Date();
-      const hours = String(now.getHours()).padStart(2, "0");
-      const minutes = String(now.getMinutes()).padStart(2, "0");
-      const seconds = String(now.getSeconds()).padStart(2, "0");
+      // const now = new Date();
+      const hours = "1"
+      // String(now.getHours()).padStart(2, "0");
+      const minutes ="1"
+      //  String(now.getMinutes()).padStart(2, "0");
+      const seconds = "1"
+      // String(now.getSeconds()).padStart(2, "0");
       setCurrentTime(`${hours}:${minutes}:${seconds}`);
     };
     updateTime();
@@ -44,7 +55,28 @@ const Navbar = () => {
   const toggleModal = () => setIsModalOpen(!isModalOpen);
   const toggleForm = () => setIsLogin(!isLogin);
 
+  
+
   const handleRegister = async (data: RegisterFormInputs) => {
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const responseData = await response.json();
+      if (response.ok) {
+        setStatusMessage("Registration successful! Please check your email.");
+        reset();
+        setIsLogin(true);
+      } else {
+        setStatusMessage(responseData.message || "Registration failed.");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      setStatusMessage("Server error. Please try again later.");
+    }
     setIsLogin(true);
   };
 
@@ -57,6 +89,8 @@ const Navbar = () => {
   };
 
   const handleLogout = () => dispatch(logoutUser());
+  console.log(user.name )
+  
 
   return (
     <>
@@ -74,24 +108,27 @@ const Navbar = () => {
           </div>
           <div className="text-center text-xs font-mono">{currentTime}</div>
           <div className="flex items-center space-x-4">
-            <ThemeToggle />
+            {/* <ThemeToggle /> */}
             {isAuthenticated ? (
               <div className="flex items-center space-x-4">
-                <span className="text-white">{name}</span>
+               
                 <button
                   className="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded-md"
                   onClick={handleLogout}
                 >
-                  Logout
+                  Logout 
                 </button>
               </div>
             ) : (
-              <button
+              <div>           
+                  <button
                 className="bg-slate-600 hover:bg-purple-400 text-white font-semibold py-1 px-3 rounded-md"
                 onClick={toggleModal}
               >
                 {isLogin ? "Login" : "Register"}
               </button>
+              </div>
+ 
             )}
           </div>
         </div>
@@ -174,9 +211,14 @@ const Navbar = () => {
               </form>
             )}
 
-            {error && (
+            {/* {error && (
               <div className="mt-4 text-center text-red-500">
                 {error}
+              </div>
+            )} */}
+                  {statusMessage && (
+              <div className="mt-4 text-center text-red-500">
+                {statusMessage}
               </div>
             )}
 
