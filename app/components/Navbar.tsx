@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import ThemeToggle from "./ThemeToggle";
 import Image from "next/image";
 import Sidebar from "./Sidebar";
 import { useDispatch, useSelector } from "react-redux";
@@ -12,10 +11,13 @@ import { fetchUserDetails, loginUser, logoutUser, selectIsAuthenticated, selectU
 interface LoginFormInputs {
   email: string;
   password: string;
+  name: string;
 }
 
 interface RegisterFormInputs extends LoginFormInputs {
   name: string;
+  email: string;
+  password: string;
 }
 
 const Navbar = () => {
